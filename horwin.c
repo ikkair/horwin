@@ -34,6 +34,9 @@ void horwin_out(void);
 void horwin_fast_toggle(void);
 void horwin_save_fast(void);
 void horwin_click(void);
+void horwin_loop_out(uint16_t*, uint16_t*);
+void horwin_adder(uint16_t*, uint16_t*, uint8_t*);
+
 // Profile
 Profile* initProfile(void);
 void movRight(void);
@@ -254,6 +257,7 @@ void horwin_point(double x, double y){
     digitizer.inrange = 1;
     digitizer_set_report(digitizer);
 }
+
 // To use digitizer as coordinate
 void horwin_coordinate(uint8_t x, uint8_t y){
     if (Active == NULL)
@@ -270,24 +274,23 @@ void horwin_coordinate(uint8_t x, uint8_t y){
     }
 }
 
-// To get inside a window
+// To multiply the adder
+void horwin_adder( uint16_t *adderNumerator, uint16_t *adderDenominator, uint8_t *pos){
+    if(*adderDenominator >= 3){
+        *adderNumerator *= 3;
+        *adderNumerator += *pos;
+    } else {
+        *adderNumerator = *pos;
+    }
+    *adderDenominator *= 3;
+}
+
+// to get inside a window
 void horwin_in(){
-    // If to prevent variable overflow
+    // if to prevent variable overflow
     if (Active->denominatorX * 3 > Active->denominatorX && Active->denominatorY * 3 > Active->denominatorY){
-        if(Active->denominatorY >= 3){
-            Active->numeratorY *= 3;
-            Active->numeratorY += Active->posY;
-        } else {
-            Active->numeratorY = Active->posY;
-        }
-        Active->denominatorY *= 3;
-        if(Active->denominatorX >= 3){
-            Active->numeratorX *= 3;
-            Active->numeratorX += Active->posX;
-        } else {
-            Active->numeratorX = Active->posX;
-        }
-        Active->denominatorX *= 3;
+        horwin_adder(&Active->numeratorX, &Active->denominatorX, &Active->posX);
+        horwin_adder(&Active->numeratorY, &Active->denominatorY, &Active->posY);
     }
     horwin_save_fast();
 }
@@ -301,29 +304,28 @@ void horwin_reset(){
     horwin_save_fast();
 }
 
+// Logic to get out of a window
+void horwin_loop_out(uint16_t *numerator,  uint16_t *denominator){
+    if(*denominator/3 > 1){
+        while (*numerator % 3 != 0){
+            *numerator -= 1;
+        }
+        *numerator /= 3;
+    }
+    *denominator /= *denominator/3 >= 1 ? 3 : 1;
+}
+
 // To get out of a window
 void horwin_out(){
-    if(Active->denominatorY/3 > 1){
-        while (Active->numeratorY % 3 != 0){
-            Active->numeratorY -= 1;
-        }
-        Active->numeratorY /= 3;
-    }
-    Active->denominatorY /= Active->denominatorY/3 >= 1 ? 3 : 1;
-    if(Active->denominatorX/3 > 1){
-        while (Active->numeratorX % 3 != 0){
-            Active->numeratorX -= 1;
-        }
-        Active->numeratorX /= 3;
-    }
-    Active->denominatorX /= Active->denominatorX/3 >= 1 ? 3 : 1;
-    horwin_save_fast();
+    horwin_loop_out(&Active->numeratorX, &Active->denominatorX);
+    horwin_loop_out(&Active->numeratorY, &Active->denominatorY);
 }
 
 // Toggle fast horwin
 void horwin_fast_toggle(){
     fast_horwin = !fast_horwin;
 }
+
 // To safely refresh coordinate
 void horwin_save_fast(){
     if(fast_horwin == true){
