@@ -14,3 +14,8 @@ Copy horwin.c to your keymap folder then add this line at the top in your keymap
 ```sh
 #include "horwin.c"
 ```
+
+
+## Implementation
+Using Fraction and Modulo Operator to get inside or outside the window.
+Using Circular Doubly Linked List data structure to connect every profile next to eachother ensuring fast switching action when changing or deleting profile.
